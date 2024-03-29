@@ -1,0 +1,78 @@
+/* Reset some default styles */
+body, h1, h2, h3, p, ul, form {
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Header and navigation styles */
+  header {
+    background-color: #333;
+    color: #fff;
+    padding: 10px;
+  }
+  
+  nav ul {
+    list-style-type: none;
+    display: flex;
+  }
+  
+  nav ul li {
+    margin-right: 20px;
+  }
+  
+  nav ul li a {
+    color: #fff;
+    text-decoration: none;
+  }
+  
+  /* Main content styles */
+  main {
+    padding: 20px;
+  }
+  
+  section {
+    margin-bottom: 40px;
+  }
+  
+  section h2 {
+    margin-bottom: 10px;
+  }
+  
+  /* Team section styles */
+  #team ul {
+    list-style-type: none;
+    display: flex;
+  }
+  
+  #team li {
+    margin-right: 20px;
+    text-align: center;
+  }
+  
+  #team img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+  }
+  
+  /* Contact form styles */
+  form label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  form input,
+  form textarea {
+    display: block;
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+  }
+  
+  /* Footer styles */
+  footer {
+    background-color: #333;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+  }
