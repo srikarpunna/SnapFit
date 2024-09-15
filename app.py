@@ -2,57 +2,63 @@ import os
 import streamlit as st
 import requests
 import google.generativeai as genai
+from dotenv import load_dotenv
 
-# Accessing the secrets stored in TOML format
-gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
-usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
-
-# Configure Google Generative AI with the Gemini API
-genai.configure(api_key=gemini_api_key)
+# Load environment variables from .env file
+load_dotenv()
 
 # Set Streamlit page configuration
-st.set_page_config(page_title="SnapFit", page_icon=":robot:")
-st.header("SnapFit")
+st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
+st.header("NutriMentor")
 
-# USDA API Key validation
+# Configure Google Generative AI with the Gemini API
+api_key = os.getenv("GEMINI_API_KEY") # Load API key from .env file
+if not api_key:
+  st.error("Gemini API key not found. Please set it in the .env file.")
+  st.stop()
+
+genai.configure(api_key=api_key)
+
+# Your USDA API Key
+usda_api_key = os.getenv("USDA_API_KEY") # Load USDA API key from .env file
 if not usda_api_key:
-    st.error("USDA API key not found in the secrets. Please configure it correctly.")
-    st.stop()
+  st.error("USDA API key not found. Please set it in the .env file.")
+  st.stop()
 
 # Function to query USDA API for nutritional data
 def get_nutritional_data(food_name):
-    search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?query={food_name}&api_key={usda_api_key}"
-    response = requests.get(search_url)
-    data = response.json()
+  search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?query={food_name}&api_key={usda_api_key}"
+  response = requests.get(search_url)
+  data = response.json()
 
-    if 'foods' in data and len(data['foods']) > 0:
-        food_data = data['foods'][0]  # Take the first result from the search
-        food_name = food_data.get("description", food_name)
-        serving_size = food_data.get("servingSize", 100)
-        serving_size_unit = food_data.get("servingSizeUnit", "g")
-        food_nutrients = food_data.get("foodNutrients", [])
+  if 'foods' in data and len(data['foods']) > 0:
+    food_data = data['foods'][0] # Take the first result from the search
+    food_name = food_data.get("description", food_name)
+    serving_size = food_data.get("servingSize", 100)
+    serving_size_unit = food_data.get("servingSizeUnit", "g")
+    food_nutrients = food_data.get("foodNutrients", [])
 
-        nutrients = {}
-        for nutrient in food_nutrients:
-            nutrient_name = nutrient.get("nutrientName")
-            unit_name = nutrient.get("unitName")
-            value = nutrient.get("value")
-            nutrients[nutrient_name] = f"{value} {unit_name}"
+    nutrients = {}
+    for nutrient in food_nutrients:
+      nutrient_name = nutrient.get("nutrientName")
+      unit_name = nutrient.get("unitName")
+      value = nutrient.get("value")
+      nutrients[nutrient_name] = f"{value} {unit_name}"
 
-        return {
-            "food_name": food_name,
-            "serving_size": serving_size,
-            "serving_size_unit": serving_size_unit,
-            "nutrients": nutrients
-        }
-    else:
-        return None
+    return {
+      "food_name": food_name,
+      "serving_size": serving_size,
+      "serving_size_unit": serving_size_unit,
+      "nutrients": nutrients
+    }
+  else:
+    return None
 
-# Function to initialize the model and query Gemini LLM
+# Function to initialize the model
 def query_gemini(prompt):
-    model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
-    response = model.generate_content(prompt)
-    return response.candidates[0].content.parts[0].text if response.candidates else "No response"
+  model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+  response = model.generate_content(prompt)
+  return response.candidates[0].content.parts[0].text if response.candidates else "No response"
 
 # Collect user information
 st.subheader("Please enter your personal information or use default values for testing:")
@@ -63,8 +69,8 @@ default_gender = "Male"
 default_height = 173.0
 default_weight = 127.0
 default_activity_level = "Moderately active"
-default_calories_burned = 3500  # Weekly average calories burned
-default_steps_walked = 4000  # Weekly average steps
+default_calories_burned = 3500 # Weekly average calories burned
+default_steps_walked = 4000 # Weekly average steps
 default_sleep_hours = 7.0
 default_health_goals = "Lose 15 kg in 3 months"
 default_dietary_preferences = "Non-vegetarian"
@@ -89,50 +95,50 @@ is_alcoholic = st.checkbox("Do you consume alcohol regularly?", value=default_is
 
 # Option for including alcohol in the meal plan
 if is_alcoholic:
-    st.warning("Drinking alcohol may impact your weight loss journey. Would you still like to include alcohol in your meal plan?")
-    include_alcohol = st.radio("Include alcohol in the meal plan?", ["Yes", "No"], index=1)
+  st.warning("Drinking alcohol may impact your weight loss journey. Would you still like to include alcohol in your meal plan?")
+  include_alcohol = st.radio("Include alcohol in the meal plan?", ["Yes", "No"], index=1)
 else:
-    include_alcohol = "No"
+  include_alcohol = "No"
 
 # User inputs their regular food preferences
 user_food_list = st.text_area("Enter the list of foods you eat regularly (separated by commas)", "chicken, rice, eggs, fish")
 
 if st.button("Generate Meal Plan"):
-    # Get nutritional data for each food
-    nutritional_data = []
-    for food in user_food_list.split(","):
-        food = food.strip().lower()
-        data = get_nutritional_data(food)
-        if data:
-            nutrients = "\n".join([f"{nutrient}: {value}" for nutrient, value in data["nutrients"].items()])
-            nutritional_data.append(f"**{data['food_name']}** ({data['serving_size']} {data['serving_size_unit']}):\n{nutrients}")
-        else:
-            nutritional_data.append(f"**{food.capitalize()}**: Nutritional information not found.")
+  # Get nutritional data for each food
+  nutritional_data = []
+  for food in user_food_list.split(","):
+    food = food.strip().lower()
+    data = get_nutritional_data(food)
+    if data:
+      nutrients = "\n".join([f"{nutrient}: {value}" for nutrient, value in data["nutrients"].items()])
+      nutritional_data.append(f"**{data['food_name']}** ({data['serving_size']} {data['serving_size_unit']}):\n{nutrients}")
+    else:
+      nutritional_data.append(f"**{food.capitalize()}**: Nutritional information not found.")
 
-    # Display user information and nutritional data
-    st.subheader("Your Information:")
-    user_info = f"""
-    Age: {age}
-    Gender: {gender}
-    Height: {height} cm
-    Weight: {weight} kg
-    Activity Level: {activity_level}
-    Weekly Average Calories Burned: {calories_burned} kcal
-    Weekly Average Steps Walked: {steps_walked}
-    Average Daily Sleep Hours: {sleep_hours}
-    Health Goals: {health_goals}
-    Dietary Preferences: {dietary_preferences}
-    Health Conditions: {health_conditions}
-    Alcoholic: {"Yes" if is_alcoholic else "No"}
-    Include Alcohol: {include_alcohol}
-    Regular Foods: {user_food_list}
-    """
-    st.text(user_info)
+  # Display user information and nutritional data
+  st.subheader("Your Information:")
+  user_info = f"""
+  Age: {age}
+  Gender: {gender}
+  Height: {height} cm
+  Weight: {weight} kg
+  Activity Level: {activity_level}
+  Weekly Average Calories Burned: {calories_burned} kcal
+  Weekly Average Steps Walked: {steps_walked}
+  Average Daily Sleep Hours: {sleep_hours}
+  Health Goals: {health_goals}
+  Dietary Preferences: {dietary_preferences}
+  Health Conditions: {health_conditions}
+  Alcoholic: {"Yes" if is_alcoholic else "No"}
+  Include Alcohol: {include_alcohol}
+  Regular Foods: {user_food_list}
+  """
+  st.text(user_info)
 
-    st.subheader("Nutritional Data for Foods:")
-    st.write("\n\n".join(nutritional_data))
+  st.subheader("Nutritional Data for Foods:")
+  st.write("\n\n".join(nutritional_data))
 
-    detailed_prompt = f"""
+  detailed_prompt = f"""
 User Information:
 {user_info}
 
@@ -190,14 +196,14 @@ Final Summary:
 
 Provide a daily summary for each day, listing the total calories, protein, fat, and carbohydrates consumed across all meals.
 Include a table of food items used in the plan, showing their portion size and corresponding nutritional information.
-    """
+  """
 
 
 
 
-    # Query the Gemini LLM
-    gemini_response = query_gemini(detailed_prompt)
+  # Query the Gemini LLM
+  gemini_response = query_gemini(detailed_prompt)
 
-    # Display the meal plan generated by Gemini
-    st.subheader("Personalized Meal Plan with Nutritional Information:")
-    st.write(gemini_response)
+  # Display the meal plan generated by Gemini
+  st.subheader("Personalized Meal Plan with Nutritional Information:")
+  st.write(gemini_response)
