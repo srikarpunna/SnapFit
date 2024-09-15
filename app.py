@@ -7,6 +7,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Accessing the secrets stored in TOML format
+gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
+usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
+
+ 
+genai.configure(api_key=gemini_api_key)
+
 # Set Streamlit page configuration
 st.set_page_config(page_title="SnapFit", page_icon=":robot:")
 st.header("SnapFit")
