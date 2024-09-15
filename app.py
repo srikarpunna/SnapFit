@@ -4,68 +4,68 @@ import requests
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# # Load environment variables from .env file
+# load_dotenv()
 
+# # Accessing the secrets stored in TOML format
+# gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
+# usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
+
+ 
+# genai.configure(api_key=gemini_api_key)
+
+# Set Streamlit page configuration
+ 
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 
- 
+# Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
 
 # Set Streamlit page configuration
 st.set_page_config(page_title="SnapFit", page_icon=":robot:")
 st.header("SnapFit")
 
-# Configure Google Generative AI with the Gemini API
-api_key = os.getenv("GEMINI_API_KEY") # Load API key from .env file
-if not api_key:
-  st.error("Gemini API key not found. Please set it in the .env file.")
-  st.stop()
-
-genai.configure(api_key=api_key)
-
-# Your USDA API Key
-usda_api_key = os.getenv("USDA_API_KEY") # Load USDA API key from .env file
+# USDA API Key validation
 if not usda_api_key:
-  st.error("USDA API key not found. Please set it in the .env file.")
-  st.stop()
+    st.error("USDA API key not found in the secrets. Please configure it correctly.")
+    st.stop()
 
 # Function to query USDA API for nutritional data
 def get_nutritional_data(food_name):
-  search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?query={food_name}&api_key={usda_api_key}"
-  response = requests.get(search_url)
-  data = response.json()
+    search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?query={food_name}&api_key={usda_api_key}"
+    response = requests.get(search_url)
+    data = response.json()
 
-  if 'foods' in data and len(data['foods']) > 0:
-    food_data = data['foods'][0] # Take the first result from the search
-    food_name = food_data.get("description", food_name)
-    serving_size = food_data.get("servingSize", 100)
-    serving_size_unit = food_data.get("servingSizeUnit", "g")
-    food_nutrients = food_data.get("foodNutrients", [])
+    if 'foods' in data and len(data['foods']) > 0:
+        food_data = data['foods'][0]  # Take the first result from the search
+        food_name = food_data.get("description", food_name)
+        serving_size = food_data.get("servingSize", 100)
+        serving_size_unit = food_data.get("servingSizeUnit", "g")
+        food_nutrients = food_data.get("foodNutrients", [])
 
-    nutrients = {}
-    for nutrient in food_nutrients:
-      nutrient_name = nutrient.get("nutrientName")
-      unit_name = nutrient.get("unitName")
-      value = nutrient.get("value")
-      nutrients[nutrient_name] = f"{value} {unit_name}"
+        nutrients = {}
+        for nutrient in food_nutrients:
+            nutrient_name = nutrient.get("nutrientName")
+            unit_name = nutrient.get("unitName")
+            value = nutrient.get("value")
+            nutrients[nutrient_name] = f"{value} {unit_name}"
 
-    return {
-      "food_name": food_name,
-      "serving_size": serving_size,
-      "serving_size_unit": serving_size_unit,
-      "nutrients": nutrients
-    }
-  else:
-    return None
+        return {
+            "food_name": food_name,
+            "serving_size": serving_size,
+            "serving_size_unit": serving_size_unit,
+            "nutrients": nutrients
+        }
+    else:
+        return None
 
-# Function to initialize the model
+# Function to initialize the model and query Gemini LLM
 def query_gemini(prompt):
-  model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
-  response = model.generate_content(prompt)
-  return response.candidates[0].content.parts[0].text if response.candidates else "No response"
+    model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+    response = model.generate_content(prompt)
+    return response.candidates[0].content.parts[0].text if response.candidates else "No response"
 
 # Collect user information
 st.subheader("Please enter your personal information or use default values for testing:")
