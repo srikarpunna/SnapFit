@@ -2,27 +2,21 @@ import os
 import streamlit as st
 import requests
 import google.generativeai as genai
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Set Streamlit page configuration
-st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
-st.header("NutriMentor")
+# Accessing the secrets stored in TOML format
+gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
+usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 
 # Configure Google Generative AI with the Gemini API
-api_key = os.getenv("GEMINI_API_KEY")  # Load API key from .env file
-if not api_key:
-    st.error("Gemini API key not found. Please set it in the .env file.")
-    st.stop()
+genai.configure(api_key=gemini_api_key)
 
-genai.configure(api_key=api_key)
+# Set Streamlit page configuration
+st.set_page_config(page_title="SnapFit", page_icon=":robot:")
+st.header("SnapFit")
 
-# Your USDA API Key
-usda_api_key = os.getenv("USDA_API_KEY")  # Load USDA API key from .env file
+# USDA API Key validation
 if not usda_api_key:
-    st.error("USDA API key not found. Please set it in the .env file.")
+    st.error("USDA API key not found in the secrets. Please configure it correctly.")
     st.stop()
 
 # Function to query USDA API for nutritional data
@@ -54,7 +48,7 @@ def get_nutritional_data(food_name):
     else:
         return None
 
-# Function to initialize the model
+# Function to initialize the model and query Gemini LLM
 def query_gemini(prompt):
     model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
     response = model.generate_content(prompt)
