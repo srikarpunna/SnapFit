@@ -67,7 +67,7 @@ def format_nutritional_data(nutritional_data):
 # Function to initialize the model with Pinecone
 def init_model():
     # Load the PDF document
-    loader = PyPDFLoader("Dietary_Guidelines_for_Americans_2020-2025.pdf")
+    loader = PyPDFLoader("Dietary_Guidelines_for_Americans-2020-2025.pdf")
     documents = loader.load()
 
     # Split the documents into chunks
